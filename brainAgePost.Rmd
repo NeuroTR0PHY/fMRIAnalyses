@@ -1,0 +1,64 @@
+---
+title: "Brain Age"
+output: html_notebook
+---
+
+```{bash}
+for period in pre post; do for sub in cda004 cda005 cda006 cda007 cda008 cda010 cda011 cda014 cda016 cda017 cda102 cda103 cda104 cda109 cda110 cda111 cda112 cda113 cda114 S002 S003 S004 S005 S006 S007 S008 S009 S011 S012 S013 S014 S015 S017 S020 S021 S022 S023 S024 S026 S027 S029 S031 S032; do brainageR -f /Users/nathan/Downloads/brainage/NoceraData/${sub}/${period}/MPRAGE/${sub}_MPRAGE_unreg.nii -o /Users/nathan/Downloads/brainage/NoceraData/${sub}/${period}/MPRAGE/brainage.csv; done; done
+
+```
+
+
+```{r}
+require(ggplot2)
+require(xlsx)
+```
+
+```{r}
+setwd("~/Downloads/brainage/NoceraData")
+```
+
+```{r}
+data = read.xlsx("noceraData.xlsx", sheetIndex = 2)
+data$time = factor(data$time, levels=c("pre", "post"))
+data$aging = data$predictedAgePre - data$realAge
+```
+
+```{r}
+sp <- ggscatter(data, y = "vo2_pre", x = "aging",
+   add = "reg.line",  # Add regressin line
+   add.params = list(color = "blue", fill = "lightgray"), # Customize reg. line
+   conf.int = TRUE, # Add confidence interval
+   cor.coef = T
+   ) + xlim(-30,30) 
+
+sp #+ stat_cor(method = "pearson", label.x = 20, label.y = 40)
+```
+
+```{r}
+cor(data$predictedAgePre, data$vo2_pre)
+cor(data$predictedAgePre, data$realAge)
+```
+
+
+
+
+```{r}
+ggplot(data = data, aes(x = realAge, y = predictedAgePre, group = ID)) +   geom_path()+
+  geom_point()
+```
+
+```{r}
+t.test(time ~ predictedAgePre, data = data, paired = T, alternative = "two.sided")
+```
+
+```{r}
+data$group[data$group == "Balance "] = "Balance"
+data$group = factor(data$group)
+t.test(diff ~ group, data = data, paired = F, alternative = "two.sided")
+```
+
+# do diff scores (pre - post) and V02
+# look into longitudinal study, is there in older adults
+# is our difference in predicted age versus actual age different from what would be expected in the literature? what is the mean in these age ranges
+# regardless in group assignment, those that show the greatest activity increase... do correlation between change in brain age at individual level and in V02 max. brain age on X and V02 on Y

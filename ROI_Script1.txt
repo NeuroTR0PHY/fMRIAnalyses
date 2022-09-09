@@ -1,0 +1,210 @@
+fslchfiletype NIFTI /Users/freylab/Desktop/ROI_final/IPS_L /Users/freylab/Desktop/ROI_final/IPS_L
+fslchfiletype NIFTI /Users/freylab/Desktop/ROI_final/IPS_R /Users/freylab/Desktop/ROI_final/IPS_R
+fslchfiletype NIFTI /Users/freylab/Desktop/ROI_final/BA6_L /Users/freylab/Desktop/ROI_final/BA6_L
+fslchfiletype NIFTI /Users/freylab/Desktop/ROI_final/BA6_R /Users/freylab/Desktop/ROI_final/BA6_R
+fslchfiletype NIFTI /Users/freylab/Desktop/ROI_final/IFG_L /Users/freylab/Desktop/ROI_final/IFG_L
+fslchfiletype NIFTI /Users/freylab/Desktop/ROI_final/IFG_R /Users/freylab/Desktop/ROI_final/IFG_R
+fslchfiletype NIFTI /Users/freylab/Desktop/ROI_final/SPL_L /Users/freylab/Desktop/ROI_final/SPL_L
+fslchfiletype NIFTI /Users/freylab/Desktop/ROI_final/SPL_R /Users/freylab/Desktop/ROI_final/SPL_R
+fslchfiletype NIFTI /Users/freylab/Desktop/ROI_final/INSULA /Users/freylab/Desktop/ROI_final/INSULA
+fslchfiletype NIFTI /Users/freylab/Desktop/ROI_final/SMA /Users/freylab/Desktop/ROI_final/SMA
+
+#remove hdr and image files
+for X in IFG_L IFG_R SMA INSULA IPS_L IPS_R SPL_L SPL_R BA6_L BA6_R; do rm -r ~/Desktop/ROI_final/${X}.hdr;done
+for X in IFG_L IFG_R SMA INSULA IPS_L IPS_R SPL_L SPL_R BA6_L BA6_R; do rm -r ~/Desktop/ROI_final/${X}.img
+
+#BINARIZE EACH .NII file	
+for X in IFG_L IFG_R INSULA  SPL_L SPL_R BA6_L BA6_R; do fslmaths ~/Desktop/ROI_final/${X}.nii -thr 15 -bin ~/Desktop/ROI_final/${X}_bin.nii; done
+for X in IPS_L IPS_R; do fslmaths ~/Desktop/ROI_final/${X}.nii -thr 15 -bin ~/Desktop/ROI_final/${X}_bin.nii; done
+fslmaths ~/Desktop/ROI_final/SMA.nii -thr 5 -bin ~/Desktop/ROI_final/SMA_bin.nii
+
+#subtract overlap on ROI’s
+fslmaths ~/Desktop/ROI_final/SPL_L_bin -sub ~/Desktop/ROI_final/IPS_L_bin ~/Desktop/ROI_final/SPL_L_bin.nii
+fslmaths ~/Desktop/ROI_final/SPL_R_bin -sub ~/Desktop/ROI_final/IPS_R_bin ~/Desktop/ROI_final/SPL_R_bin.nii
+fslmaths ~/Desktop/ROI_final/BA6_L_bin -sub ~/Desktop/ROI_final/SMA ~/Desktop/ROI_final/BA6_L_bin.nii
+fslmaths ~/Desktop/ROI_final/BA6_R_bin -sub ~/Desktop/ROI_final/SMA ~/Desktop/ROI_final/BA6_R_bin.nii
+fslmaths ~/Desktop/ROI_final/BA6_L_bin -sub ~/Desktop/ROI_final/IFG_L_bin ~/Desktop/ROI_final/BA6_L_bin.nii
+fslmaths ~/Desktop/ROI_final/BA6_R_bin -sub ~/Desktop/ROI_final/IFG_R_bin ~/Desktop/ROI_final/BA6_R_bin.nii
+fslmaths ~/Desktop/ROI_final/BA6_L_bin -sub ~/Desktop/ROI_final/INSULA_bin ~/Desktop/ROI_final/BA6_L_bin.nii
+fslmaths ~/Desktop/ROI_final/BA6_R_bin -sub ~/Desktop/ROI_final/INSULA_bin ~/Desktop/ROI_final/BA6_R_bin.nii
+fslmaths ~/Desktop/ROI_final/INSULA_bin -sub ~/Desktop/ROI_final/IFG_L_bin ~/Desktop/ROI_final/INSULA_bin.nii
+fslmaths ~/Desktop/ROI_final/INSULA_bin -sub ~/Desktop/ROI_final/IFG_R_bin ~/Desktop/ROI_final/INSULA_bin.nii
+
+
+
+
+
+
+
+#mask each by the z_stat interaction mask
+for X in IFG_L_bin IFG_R_bin SMA_bin INSULA_bin IPS_L_bin IPS_R_bin SPL_L_bin SPL_R_bin BA6_L_bin BA6_R_bin; do fslmaths ~/Desktop/ROI_final/${X}.nii -mas /Volumes/Storage/freylab_projects/exp67_proprioception/67_01_graspVision/data/subjects/group/masks/Interaction_Mask/inter_bin.nii.gz ~/Desktop/ROI_final/${X}_masked.nii;done
+
+#remove old ROI analysis from subject directories
+
+for cope in cope11 cope12 cope13 cope14; do for s in 01 02 03 04 05 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21; do for roi in IFG_L_bin IFG_R_bin SMA_bin INSULA_bin IPS_L_bin IPS_R_bin SPL_L_bin SPL_R_bin BA6_L_bin BA6_R_bin; do rm -r /Volumes/Storage/freylab_projects/exp67_proprioception/67_01_graspVision/data/subjects/Frey06_$s/output/level2/level2.gfeat/${cope}.feat/${roi};done;done;done
+
+###for running all ROI stats using ROIs
+for cope in cope11 cope12 cope13 cope14; do for s in 01 02 03 04 05 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21; do for roi in IFG_L_bin IFG_R_bin SMA_bin INSULA_bin IPS_L_bin IPS_R_bin SPL_L_bin SPL_R_bin BA6_L_bin BA6_R_bin; do featquery 1 /Volumes/Storage/freylab_projects/exp67_proprioception/67_01_graspVision/data/subjects/Frey06_$s/output/level2/level2.gfeat/${cope}.feat 6 stats/pe1 stats/cope1 stats/varcope1 stats/tstat1 stats/zstat1 thresh_zstat1 ${roi} -p -s -b ~/Desktop/ROI_final/${roi};done;done;done
+
+###for running all ROI stats using clsuters
+for cope in cope11 cope12 cope13 cope14; do for s in 01 02 03 04 05 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21; do for roi in 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164 165 166 167 168; do featquery 1 /Volumes/Storage/freylab_projects/exp67_proprioception/67_01_graspVision/data/subjects/Frey06_$s/output/level2/level2.gfeat/${cope}.feat 6 stats/pe1 stats/cope1 stats/varcope1 stats/tstat1 stats/zstat1 thresh_zstat1 ${roi} -p -s -b ~/Desktop/ROI_Cluster/cluster_mask_${roi};done;done;done
+
+for cope in cope11 cope12 cope13 cope14; do for s in 01 02 03 04 05 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21; do for roi in 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189; do featquery 1 /Volumes/MRIDRIVE/subjects/Frey06_$s/output/level2/level2.gfeat/${cope}.feat 6 stats/pe1 stats/cope1 stats/varcope1 stats/tstat1 stats/zstat1 thresh_zstat1 ${roi} -p -s -b /Users/nathan/Downloads/MRI_analyses06_67/10_2021/ROI_Cluster/cluster_mask_${roi};done;done;done
+
+
+
+##for creating desktop directories to store the subjecrts for all ROI's usign interaction mask
+for c in 11 12 13 14; do for sub in 01 02 03 04 05 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21; do for roi in IFG_L_bin IFG_R_bin SMA_bin INSULA_bin IPS_L_bin IPS_R_bin SPL_L_bin SPL_R_bin BA6_L_bin BA6_R_bin; do mkdir -p ~/Desktop/ROI_5-2-18/int_cope${c}/${roi}/f${sub};done;done;done
+
+##for creating desktop directories to store the subject reports for all ROI's using cluster mask
+for c in 11 12 13 14; do for sub in 01 02 03 04 05 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21; do for roi in 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189; do mkdir -p /Users/nathan/Downloads/MRI_analyses06_67/10_2021/ROI_10_19_21/int_cope${c}/${roi}/f${sub};done;done;done
+
+##for copying the report data into the newly created directories
+
+for c in 11 12 13 14; do for sub in 01 02 03 04 05 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21; do for roi in IFG_L_bin IFG_R_bin SMA_bin INSULA_bin IPS_L_bin IPS_R_bin SPL_L_bin SPL_R_bin BA6_L_bin BA6_R_bin; do cp /Volumes/Storage/freylab_projects/exp67_proprioception/67_01_graspVision/data/subjects/Frey06_${sub}/output/level2/level2.gfeat/cope${c}.feat/${roi}/report.txt ~/Desktop/ROI_5-2-18/int_cope${c}/${roi}/f${sub}/;done;done;done
+cp -R /Users/freylab/Desktop/aipspoc /Users/freylab/Desktop/test/
+
+##for copying the report data into the newly created directories
+
+for c in 11 12 13 14; do for sub in 01 02 03 04 05 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21; do for roi in 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189; do cp /Volumes/MRIDRIVE/subjects/Frey06_${sub}/output/level2/level2.gfeat/cope${c}.feat/${roi}/report.txt /Users/nathan/Downloads/MRI_analyses06_67/10_2021/ROI_10_19_21/int_cope${c}/${roi}/f${sub}/;done;done;done
+
+
+fslmaths /Desktop/ROI_final/
+
+
+#seed cluster ROI####################################
+thresh=2.3
+
+cluster -i /Users/nathan/Downloads/MRI_analyses06_67/cope10.gfeat/cope1.feat/stats/zstat1.nii.gz  -t $thresh -o cluster_index_$thresh --osize=cluster_size > cluster_info_$thresh.txt
+
+clster=131
+for cluster in 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189; do 
+
+fslmaths -dt int /Users/nathan/cluster_index_2.3.nii.gz -thr $clster -uthr $clster -bin cluster_mask_$clster
+
+34,36,38,40,42,44,46,48,50,52,54,56,58,60,62,64,66,68,70
+
+
+##for creating desktop directories to store the subject reports for all ROI's usign interaction mask
+for c in 11 12 13 14; do for sub in 01 02 03 04 05 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21; do for roi in 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189; do mkdir -p /Users/nathan/Downloads/MRI_analyses06_67/10_2021/10_19_2021/int_cope${c}/${roi}/f${sub};done;done;done
+
+##for copying the report data into the newly created directories
+
+for c in 11 12 13 14; do for sub in 01 02 03 04 05 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21; do for roi in 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164 165 166 167 168 169 170 171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189; do cp /Volumes/MRIDRIVE/subjects/Frey06_${sub}/output/level2/level2.gfeat/cope${c}.feat/${roi}/report.txt /Users/nathan/Downloads/MRI_analyses06_67/10_2021/10_19_2021/int_cope${c}/${roi}/f${sub}/;done;done;done
+cp -R /Users/freylab/Desktop/aipspoc /Users/freylab/Desktop/test/
+
+mask=169
+atlasquery -a "Harvard-Oxford Cortical Structural Atlas" -m /Users/nathan/Downloads/MRI_analyses06_67/10_2021/ROI_Cluster/cluster_mask_${mask}.nii.gz	
+atlasquery -a "Juelich Histological Atlas" -m /Users/nathan/Downloads/MRI_analyses06_67/10_2021/ROI_Cluster/cluster_mask_${mask}.nii.gz	
+
+x=72
+y=63
+z=57
+atlasquery -a "Harvard-Oxford Cortical Structural Atlas" -c ${x},${y},${z}
+atlasquery -a "Juelich Histological Atlas" -c ${x},${y},${z}
+
+
+
+#sphere based ROI 2/17/2020, 2/20/2020 #########################################
+#paths
+newDirectory="/Users/freylab/Desktop/ROI_Sphere_2_17_2020"
+storage="/Volumes/Storage/freylab_projects/exp67_proprioception/67_01_graspVision/data/subjects"
+
+
+#creating desktop storage directory
+for c in 11 12 13 14; do for sub in 01 02 03 04 05 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21; do for roi in IFG_L_bin IFG_R_bin SMA_bin INSULA_bin IPS_L_bin IPS_R_bin SPL_L_bin SPL_R_bin BA6_L_bin BA6_R_bin; do mkdir -p ${newDirectory}/int_cope${c}/${roi}/f${sub};done;done;done
+
+#BINARIZE EACH .NII file	
+for X in IFG_L IFG_R INSULA  SPL_L SPL_R ; do fslmaths ~/Desktop/ROI_final/${X}.nii -thr 30 -bin ${newDirectory}/ROI_images/Atlases/${X}_bin.nii.gz; done
+for X in IPS_L IPS_R; do fslmaths ~/Desktop/ROI_final/${X}.nii -thr 30 -bin ${newDirectory}/ROI_images/Atlases/${X}_bin.nii.gz; done
+for X in BA6_L BA6_R; do fslmaths ~/Desktop/ROI_final/${X}.nii -thr 50 -bin ${newDirectory}/ROI_images/Atlases/${X}_bin.nii.gz; done
+fslmaths ~/Desktop/ROI_final/SMA.nii -thr 20 -bin ${newDirectory}/ROI_images/Atlases/SMA_bin.nii.gz
+
+#subtract overlap on ROI’s
+fslmaths ${newDirectory}/ROI_images/Atlases/SPL_L_bin.nii.gz -sub ${newDirectory}/ROI_images/Atlases/IPS_L_bin.nii.gz {newDirectory}/ROI_images/Atlases/SPL_L_bin.nii.gz
+fslmaths ${newDirectory}/ROI_images/Atlases/SPL_R_bin.nii.gz -sub ${newDirectory}/ROI_images/Atlases/IPS_R_bin.nii.gz ${newDirectory}/ROI_images/Atlases/SPL_R_bin.nii.gz
+fslmaths ${newDirectory}/ROI_images/Atlases/BA6_L_bin.nii.gz -sub ${newDirectory}/ROI_images/Atlases/SMA_bin.nii.gz ${newDirectory}/ROI_images/Atlases/BA6_L_bin.nii.gz
+fslmaths ${newDirectory}/ROI_images/Atlases/BA6_R_bin.nii.gz -sub ${newDirectory}/ROI_images/Atlases/SMA_bin.nii.gz ${newDirectory}/ROI_images/Atlases/BA6_R_bin.nii.gz
+fslmaths ${newDirectory}/ROI_images/Atlases/BA6_L_bin.nii.gz -sub ${newDirectory}/ROI_images/Atlases/IFG_L_bin.nii.gz ${newDirectory}/ROI_images/Atlases/BA6_L_bin.nii.gz
+fslmaths ${newDirectory}/ROI_images/Atlases/BA6_R_bin.nii.gz -sub ${newDirectory}/ROI_images/Atlases/IFG_R_bin.nii.gz ${newDirectory}/ROI_images/Atlases/BA6_R_bin.nii.gz
+fslmaths ${newDirectory}/ROI_images/Atlases/BA6_L_bin.nii.gz -sub ${newDirectory}/ROI_images/Atlases/INSULA_bin.nii.gz ${newDirectory}/ROI_images/Atlases/BA6_L_bin.nii.gz
+fslmaths ${newDirectory}/ROI_images/Atlases/BA6_R_bin.nii.gz -sub ${newDirectory}/ROI_images/Atlases/INSULA_bin.nii.gz ${newDirectory}/ROI_images/Atlases/BA6_R_bin.nii.gz
+fslmaths ${newDirectory}/ROI_images/Atlases/INSULA_bin.nii.gz -sub ${newDirectory}/ROI_images/Atlases/IFG_L_bin.nii.gz ${newDirectory}/ROI_images/Atlases/INSULA_bin.nii.gz
+fslmaths ${newDirectory}/ROI_images/Atlases/INSULA_bin.nii.gz -sub ${newDirectory}/ROI_images/Atlases/IFG_R_bin.nii.gz ${newDirectory}/ROI_images/Atlases/INSULA_bin.nii.gz
+
+
+
+#intercept/mask each subjects grasp > reach (cope 01) z-stat image with each binary atlas.
+for SUB in 01 02 03 04 05 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21; do for X in IFG_L_bin IFG_R_bin SMA_bin INSULA_bin IPS_L_bin IPS_R_bin SPL_L_bin SPL_R_bin BA6_L_bin BA6_R_bin; do fslmaths ${storage}/Frey06_${SUB}/output/level2/level2.gfeat/cope1.feat/stats/zstat1.nii.gz -mas ${newDirectory}/ROI_images/Atlases/${X}.nii.gz ${newDirectory}/ROI_images/Masked_cope01/sub${SUB}_${X}_masked01.nii.gz;done;done
+
+
+#Calculate the peak voxel from each of the output images in the last step and create new binary images of a 10mm sphere placed at each of the peak voxel locations.
+
+for SUB in 01 02 03 04 05 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21; do for ROI in IFG_L_bin IFG_R_bin SMA_bin INSULA_bin IPS_L_bin IPS_R_bin SPL_L_bin SPL_R_bin BA6_L_bin BA6_R_bin; 
+do 
+coordx=$(fslstats /Users/freylab/Desktop/ROI_Sphere_2_17_2020/ROI_images/Masked_cope01/sub${SUB}_${ROI}_masked01.nii.gz -x | awk '{print $1}'); #gets x coordinate using 'awk'
+coordy=$(fslstats /Users/freylab/Desktop/ROI_Sphere_2_17_2020/ROI_images/Masked_cope01/sub${SUB}_${ROI}_masked01.nii.gz -x | awk '{print $2}'); #gets y coordinate ''
+coordz=$(fslstats /Users/freylab/Desktop/ROI_Sphere_2_17_2020/ROI_images/Masked_cope01/sub${SUB}_${ROI}_masked01.nii.gz -x | awk '{print $3}'); #gets z coordinate ''
+fslmaths ${newDirectory}/ROI_images/Atlases/bg_image.nii.gz -mul 0 -add 1 -roi $coordx 1 $coordy 1 $coordz 1 0 1 ${newDirectory}/ROI_images/Points/ACCpoint_${SUB}_${ROI}.nii.gz -odt float; #create map with point at peak voxel
+fslmaths ${newDirectory}/ROI_images/Points/ACCpoint_${SUB}_${ROI}.nii.gz -kernel sphere 10 -fmean ${newDirectory}/ROI_images/Spheres/ACCsphere_${SUB}_${ROI}.nii.gz -odt float; #creat map with 10mm sphere around peak voxel
+fslmaths ${newDirectory}/ROI_images/Spheres/ACCsphere_${SUB}_${ROI}.nii.gz -thr 0.0001 -bin ${newDirectory}/ROI_images/Spheres/ACCsphere_${SUB}_${ROI}.nii.gz; #make sure sphere is intensity=1 and the rest = 0.
+done;done
+
+
+##Create binarized map from main effect of grasp > reach (cope 01) per subject
+for SUB in 01 02 03 04 05 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21;
+do
+fslmaths ${storage}/Frey06_${SUB}/output/level2/level2.gfeat/cope1.feat/stats/zstat1.nii.gz -thr 2 -bin ${newDirectory}/ROI_images/BinaryMainEffectGrasp/ME_Grasp_bin_${SUB}.nii.gz;
+done
+
+
+#Intersect each sphere with a binarized version of the z-stat maps for each subjects main effect of grasp > reach (cope 01)
+for SUB in 01 02 03 04 05 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21; do for ROI in IFG_L_bin IFG_R_bin SMA_bin INSULA_bin IPS_L_bin IPS_R_bin SPL_L_bin SPL_R_bin BA6_L_bin BA6_R_bin; 
+do 
+fslmaths ${newDirectory}/ROI_images/Spheres/ACCsphere_${SUB}_${ROI}.nii.gz -mas ${newDirectory}/ROI_images/BinaryMainEffectGrasp/ME_Grasp_bin_${SUB}.nii.gz ${newDirectory}/ROI_images/FinalSpheres/ACCsphere_${SUB}_${ROI}.nii.gz;
+done;done
+
+for SUB in 18; do for ROI in IFG_L_bin IFG_R_bin SMA_bin INSULA_bin IPS_L_bin IPS_R_bin SPL_L_bin SPL_R_bin BA6_L_bin BA6_R_bin; 
+do 
+fslmaths ${newDirectory}/ROI_images/Spheres/ACCsphere_${SUB}_${ROI}.nii.gz -mas ${newDirectory}/ROI_images/BinaryMainEffectGrasp/ME_Grasp_bin_${SUB}.nii.gz ${newDirectory}/ROI_images/FinalSpheres/ACCsphere_${SUB}_${ROI}.nii.gz;
+done;done
+
+#creating subject storage directories in desktop directory
+for c in 11 12 13 14; do for sub in 01 02 03 04 05 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21; do for cope in 11 12 13 14; do mkdir -p ${newDirectory}/int_cope${cope}/level2s/f${sub};done;done;done
+
+#copy cope's 11:14 for each subject into the desktop directory
+for c in 12 13 14; do for sub in 01 02 03 04 05 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21; do cp -R /Volumes/Storage/freylab_projects/exp67_proprioception/67_01_graspVision/data/subjects/Frey06_${sub}/output/level2/level2.gfeat/cope${c}.feat ${newDirectory}/int_cope${c}/level2s/f${sub}/;done;done
+
+for c in 12; do for sub in  18; do cp -R /Volumes/Storage/freylab_projects/exp67_proprioception/67_01_graspVision/data/subjects/Frey06_${sub}/output/level2/level2.gfeat/cope${c}.feat ${newDirectory}/int_cope${c}/level2s/f${sub}/;done;done
+
+###remove old ROI analyses
+for cope in cope11 cope12 cope13 cope14; do for s in 01 02 03 04 05 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21; do for roi in IFG_L_bin IFG_R_bin SMA_bin INSULA_bin IPS_L_bin IPS_R_bin SPL_L_bin SPL_R_bin BA6_L_bin BA6_R_bin; do rm -r ${newDirectory}/int_${cope}/level2s/f${s}/${cope}.feat/${roi}* ;done;done;done
+
+for cope in cope12; do for s in 20 ; do for roi in IFG_L_bin IFG_R_bin SMA_bin INSULA_bin IPS_L_bin IPS_R_bin SPL_L_bin SPL_R_bin BA6_L_bin BA6_R_bin; do rm -r ${newDirectory}/int_${cope}/level2s/f${s}/${cope}.feat/${roi}* ;done;done;done
+
+
+###for running all ROI stats using ROIs
+for cope in cope11 cope12 cope13 cope14; do for s in 01 02 03 04 05 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21; do for roi in IFG_L_bin IFG_R_bin SMA_bin INSULA_bin IPS_L_bin IPS_R_bin SPL_L_bin SPL_R_bin BA6_L_bin BA6_R_bin; do featquery 1 ${newDirectory}/int_${cope}/level2s/f${s}/${cope}.feat 6 stats/pe1 stats/cope1 stats/varcope1 stats/tstat1 stats/zstat1 thresh_zstat1 ${roi} -p -s -b ${newDirectory}/ROI_images/FinalSpheres/ACCsphere_${s}_${roi};done;done;done
+
+
+for cope in cope12; do for s in 20;do for roi in IFG_L_bin IFG_R_bin SMA_bin INSULA_bin IPS_L_bin IPS_R_bin SPL_L_bin SPL_R_bin BA6_L_bin BA6_R_bin; do featquery 1 ${newDirectory}/int_${cope}/level2s/f${s}/${cope}.feat 6 stats/pe1 stats/cope1 stats/varcope1 stats/tstat1 stats/zstat1 thresh_zstat1 ${roi} -p -s -b ${newDirectory}/ROI_images/FinalSpheres/ACCsphere_${s}_${roi};done;done;done
+
+####combine masks into one image per ROI
+#start with empty image
+for ROI in IFG_L_bin IFG_R_bin SMA_bin INSULA_bin IPS_L_bin IPS_R_bin SPL_L_bin SPL_R_bin BA6_L_bin BA6_R_bin; 
+do fslmaths ${newDirectory}/ROI_images/CombinedImages/combined_${ROI}.nii.gz -mul 0 ${newDirectory}/ROI_images/CombinedImages/combined_${ROI}.nii.gz; done
+
+
+#add them all together
+for s in 01 02 03 04 05 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21; do for ROI in IFG_L_bin IFG_R_bin SMA_bin INSULA_bin IPS_L_bin IPS_R_bin SPL_L_bin SPL_R_bin BA6_L_bin BA6_R_bin; 
+do fslmaths ${newDirectory}/ROI_images/CombinedImages/combined_${RO	I}.nii.gz -add ${newDirectory}/ROI_images/FinalSpheres/ACCsphere_${s}_${ROI}.nii.gz ${newDirectory}/ROI_images/CombinedImages/combined_${ROI}.nii.gz;done;done
+		
+
+#noprmnalize the images
+for ROI in IFG_L_bin IFG_R_bin SMA_bin INSULA_bin IPS_L_bin IPS_R_bin SPL_L_bin SPL_R_bin BA6_L_bin BA6_R_bin; 
+do fslmaths ${newDirectory}/ROI_images/CombinedImages/combined_${ROI}.nii.gz -div 20 ${newDirectory}/ROI_images/CombinedImages/combined_${ROI}.nii.gz; done
+
+
+#copy report files into an export folder
+for ROI in IFG_L_bin IFG_R_bin SMA_bin INSULA_bin IPS_L_bin IPS_R_bin SPL_L_bin SPL_R_bin BA6_L_bin BA6_R_bin; do for s in 01 02 03 04 05 07 08 09 10 11 12 13 14 15 16 17 18 19 20 21;
+do for cope in cope11 cope12 cope13 cope14; do cp ${newDirectory}/int_${cope}/level2s/f${s}/${cope}.feat/${ROI}/report.txt ${newDirectory}/ToExport/${cope}/${ROI}/f${s}/;done;done;don e
